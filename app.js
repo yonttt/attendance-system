@@ -4,6 +4,9 @@ const WORK_START = '09:00';
 const WORK_END = '19:00';
 const STORAGE_KEY = 'attendance_records';
 
+// Use MongoDB if available, fallback to localStorage
+let USE_MONGODB = true;
+
 // DOM Elements
 const unitSelect = document.getElementById('unitSelect');
 const jabatanSelect = document.getElementById('jabatanSelect');
@@ -256,7 +259,7 @@ async function handleSaveAttendance(e) {
         status
     };
     
-    saveRecord(record);
+    await saveRecord(record);
     
     // Display result
     document.getElementById('resultName').textContent = name;
@@ -271,11 +274,30 @@ async function handleSaveAttendance(e) {
     alert(`Absensi ${name} tersimpan!\n${status}\nPotongan: Rp ${totalDeduction.toLocaleString('id-ID')}`);
 }
 
-// Save record to localStorage
-function saveRecord(record) {
-    const records = getRecords();
+// Save record - MongoDB first, fallback to localStorage
+async function saveRecord(record) {
+    if (USE_MONGODB) {
+        try {
+            const response = await fetch(`${API_BASE}/api/attendance`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(record)
+            });
+            const data = await response.json();
+            if (data.success) {
+                return data;
+            } else {
+                console.warn('MongoDB save failed, using localStorage:', data.error);
+                USE_MONGODB = false;
+            }
+        } catch (error) {
+            console.warn('MongoDB unavailable, using localStorage:', error);
+            USE_MONGODB = false;
+        }
+    }
     
-    // Check if record exists for same date, name, unit, jabatan - update it
+    // Fallback to localStorage
+    const records = getLocalRecords();
     const existingIndex = records.findIndex(r => 
         r.date === record.date && r.name === record.name && r.unit === record.unit && r.jabatan === record.jabatan
     );
@@ -289,15 +311,35 @@ function saveRecord(record) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
 }
 
-// Get all records from localStorage
-function getRecords() {
+// Get records from localStorage (fallback)
+function getLocalRecords() {
     const data = localStorage.getItem(STORAGE_KEY);
     return data ? JSON.parse(data) : [];
 }
 
-// Get records for specific employee
-function getEmployeeRecords(unit, jabatan, name = '') {
-    const records = getRecords();
+// Get records for specific employee - MongoDB first, fallback to localStorage
+async function getEmployeeRecords(unit, jabatan, name = '') {
+    if (USE_MONGODB) {
+        try {
+            let url = `${API_BASE}/api/attendance?unit=${encodeURIComponent(unit)}&jabatan=${encodeURIComponent(jabatan)}`;
+            if (name) url += `&name=${encodeURIComponent(name)}`;
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            if (data.success) {
+                return data.data;
+            } else {
+                console.warn('MongoDB get failed, using localStorage:', data.error);
+                USE_MONGODB = false;
+            }
+        } catch (error) {
+            console.warn('MongoDB unavailable, using localStorage:', error);
+            USE_MONGODB = false;
+        }
+    }
+    
+    // Fallback to localStorage
+    const records = getLocalRecords();
     return records.filter(r => {
         const unitMatch = r.unit === unit;
         const jabatanMatch = r.jabatan === jabatan;
@@ -307,7 +349,7 @@ function getEmployeeRecords(unit, jabatan, name = '') {
 }
 
 // Load Employee Summary
-function loadEmployeeSummary() {
+async function loadEmployeeSummary() {
     const unit = summaryUnit.value;
     const jabatan = summaryJabatan.value;
     const name = summaryNameInput.value.trim();
@@ -317,7 +359,7 @@ function loadEmployeeSummary() {
         return;
     }
     
-    const records = getEmployeeRecords(unit, jabatan, name);
+    const records = await getEmployeeRecords(unit, jabatan, name);
     
     // Calculate summary
     let totalLateDays = 0;
@@ -356,6 +398,9 @@ function loadEmployeeSummary() {
 
 // Display attendance history
 function displayHistory(records) {
+    // Store records for edit/delete functions
+    currentRecords = records;
+    
     if (records.length === 0) {
         attendanceHistory.innerHTML = '<p class="empty-message">Belum ada riwayat absensi</p>';
         return;
@@ -390,11 +435,11 @@ function displayHistory(records) {
             badges.push('<span class="badge ok">OK</span>');
         }
         
-        // Create unique identifier for record
-        const recordId = `${record.date}_${record.name}_${record.unit}_${record.jabatan}`;
+        // Create unique identifier for record - use MongoDB _id if available
+        const recordId = record._id || `${record.date}_${record.name}_${record.unit}_${record.jabatan}`;
         
         html += `
-            <div class="history-item" data-record-id="${recordId}">
+            <div class="history-item" data-record-id="${recordId}" data-mongo="${record._id ? 'true' : 'false'}">
                 <span class="date">${formatDateShort(record.date)}</span>
                 <span class="employee-name" title="${record.name || '-'}">${record.name || '-'}</span>
                 <div class="badges">${badges.join('')}</div>
@@ -430,10 +475,17 @@ function formatDateShort(dateStr) {
 
 // ===== EDIT FUNCTIONS =====
 let currentEditRecord = null;
+let currentRecords = []; // Store current displayed records
 
 async function openEditModal(recordId) {
-    const records = getRecords();
-    const record = records.find(r => `${r.date}_${r.name}_${r.unit}_${r.jabatan}` === recordId);
+    // Find record from current displayed records
+    let record = currentRecords.find(r => r._id === recordId);
+    
+    // Fallback to old localStorage method
+    if (!record) {
+        const records = getLocalRecords();
+        record = records.find(r => `${r.date}_${r.name}_${r.unit}_${r.jabatan}` === recordId);
+    }
     
     if (!record) {
         alert('Data tidak ditemukan');
@@ -561,8 +613,44 @@ document.getElementById('editForm').addEventListener('submit', async function(e)
         }
     }
     
-    // Update record in localStorage
-    const records = getRecords();
+    const updatedRecord = {
+        date: newDate,
+        name: newName,
+        unit: newUnit,
+        jabatan: newJabatan,
+        arrival: formatTimeWithOffset(WORK_START, newLateMinutes),
+        departure: formatTimeWithOffset(WORK_END, -newEarlyMinutes),
+        lateMinutes: newLateMinutes > 5 ? newLateMinutes : 0,
+        earlyMinutes: newEarlyMinutes,
+        deduction: totalDeduction,
+        status: getStatusText(newLateMinutes, newEarlyMinutes)
+    };
+    
+    // Update via MongoDB if available
+    if (USE_MONGODB && currentEditRecord._id) {
+        try {
+            updatedRecord._id = currentEditRecord._id;
+            const response = await fetch(`${API_BASE}/api/attendance`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedRecord)
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert('Data berhasil diperbarui!');
+                closeEditModal();
+                loadEmployeeSummary();
+                return;
+            } else {
+                console.warn('MongoDB update failed:', data.error);
+            }
+        } catch (error) {
+            console.warn('MongoDB unavailable:', error);
+        }
+    }
+    
+    // Fallback to localStorage
+    const records = getLocalRecords();
     const index = records.findIndex(r => 
         r.date === currentEditRecord.date && 
         r.name === currentEditRecord.name && 
@@ -571,24 +659,10 @@ document.getElementById('editForm').addEventListener('submit', async function(e)
     );
     
     if (index >= 0) {
-        records[index] = {
-            date: newDate,
-            name: newName,
-            unit: newUnit,
-            jabatan: newJabatan,
-            arrival: formatTimeWithOffset(WORK_START, newLateMinutes),
-            departure: formatTimeWithOffset(WORK_END, -newEarlyMinutes),
-            lateMinutes: newLateMinutes > 5 ? newLateMinutes : 0,
-            earlyMinutes: newEarlyMinutes,
-            deduction: totalDeduction,
-            status: getStatusText(newLateMinutes, newEarlyMinutes)
-        };
-        
+        records[index] = updatedRecord;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
         alert('Data berhasil diperbarui!');
         closeEditModal();
-        
-        // Refresh history
         loadEmployeeSummary();
     }
 });
@@ -602,10 +676,17 @@ function getStatusText(lateMinutes, earlyMinutes) {
 
 // ===== DELETE FUNCTIONS =====
 let deleteRecordId = null;
+let deleteRecord = null;
 
 function openDeleteModal(recordId) {
-    const records = getRecords();
-    const record = records.find(r => `${r.date}_${r.name}_${r.unit}_${r.jabatan}` === recordId);
+    // Find record from current displayed records
+    let record = currentRecords.find(r => r._id === recordId);
+    
+    // Fallback to localStorage
+    if (!record) {
+        const records = getLocalRecords();
+        record = records.find(r => `${r.date}_${r.name}_${r.unit}_${r.jabatan}` === recordId);
+    }
     
     if (!record) {
         alert('Data tidak ditemukan');
@@ -613,6 +694,7 @@ function openDeleteModal(recordId) {
     }
     
     deleteRecordId = recordId;
+    deleteRecord = record;
     document.getElementById('deleteInfo').textContent = 
         `${record.name} - ${formatDate(record.date)} (${record.jabatan})`;
     
@@ -622,12 +704,36 @@ function openDeleteModal(recordId) {
 function closeDeleteModal() {
     document.getElementById('deleteModal').classList.add('hidden');
     deleteRecordId = null;
+    deleteRecord = null;
 }
 
-document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
     if (!deleteRecordId) return;
     
-    const records = getRecords();
+    // Try MongoDB first if record has _id
+    if (USE_MONGODB && deleteRecord && deleteRecord._id) {
+        try {
+            const response = await fetch(`${API_BASE}/api/attendance`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ _id: deleteRecord._id })
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert('Data berhasil dihapus!');
+                closeDeleteModal();
+                loadEmployeeSummary();
+                return;
+            } else {
+                console.warn('MongoDB delete failed:', data.error);
+            }
+        } catch (error) {
+            console.warn('MongoDB unavailable:', error);
+        }
+    }
+    
+    // Fallback to localStorage
+    const records = getLocalRecords();
     const index = records.findIndex(r => `${r.date}_${r.name}_${r.unit}_${r.jabatan}` === deleteRecordId);
     
     if (index >= 0) {
@@ -635,8 +741,6 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', function()
         localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
         alert('Data berhasil dihapus!');
         closeDeleteModal();
-        
-        // Refresh history
         loadEmployeeSummary();
     }
 });
