@@ -1,13 +1,11 @@
 {
   "version": 2,
+  "buildCommand": "",
+  "outputDirectory": "public",
   "builds": [
     {
       "src": "api/*.py",
       "use": "@vercel/python"
-    },
-    {
-      "src": "public/**",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -15,10 +13,6 @@
     { "src": "/api/units", "dest": "/api/units.py" },
     { "src": "/api/positions", "dest": "/api/positions.py" },
     { "src": "/api/calculate", "dest": "/api/calculate.py" },
-    { "src": "/api/deduction-table", "dest": "/api/deduction-table.py" },
-    { "src": "/", "dest": "/public/index.html" },
-    { "src": "/style.css", "dest": "/public/style.css" },
-    { "src": "/app.js", "dest": "/public/app.js" },
-    { "src": "/(.*)", "dest": "/public/$1" }
+    { "src": "/api/deduction-table", "dest": "/api/deduction-table.py" }
   ]
 }
