@@ -98,13 +98,24 @@
                 <!-- Employee Summary -->
                 <section class="card">
                     <h2>📊 Ringkasan Karyawan</h2>
-                    <div class="employee-selector">
-                        <select id="summaryUnit"><option value="">-- Pilih Unit --</option></select>
-                        <select id="summaryJabatan" disabled><option value="">-- Pilih Jabatan --</option></select>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="summaryUnit">Unit</label>
+                            <select id="summaryUnit"><option value="">-- Pilih Unit --</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="summaryJabatan">Jabatan</label>
+                            <select id="summaryJabatan" disabled><option value="">-- Pilih Jabatan --</option></select>
+                        </div>
                     </div>
-                    <div class="employee-selector" style="margin-top: 8px;">
-                        <input type="text" id="summaryName" placeholder="Nama karyawan (opsional)">
-                        <button class="btn btn-secondary" id="loadSummaryBtn">🔍 Lihat Riwayat</button>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="summaryName">Nama Karyawan (opsional)</label>
+                            <input type="text" id="summaryName" placeholder="Cari nama...">
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: flex-end;">
+                            <button type="button" class="btn btn-secondary" id="loadSummaryBtn" style="width: 100%;">🔍 Lihat Riwayat</button>
+                        </div>
                     </div>
                     
                     <div id="employeeSummary" class="hidden">
