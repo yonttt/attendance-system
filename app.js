@@ -361,16 +361,9 @@ function displayHistory(records) {
         return;
     }
     
-    // Filter only records with lateness or early leave
-    const issueRecords = records.filter(r => r.lateMinutes > 0 || r.earlyMinutes > 0);
-    
-    if (issueRecords.length === 0) {
-        attendanceHistory.innerHTML = '<p class="empty-message">✅ Tidak ada keterlambatan atau pulang awal</p>';
-        return;
-    }
-    
+    // Show all records (not just issues) so user can edit/delete any
     let html = '';
-    issueRecords.forEach(record => {
+    records.forEach(record => {
         const badges = [];
         const durations = [];
         
@@ -382,14 +375,24 @@ function displayHistory(records) {
             badges.push('<span class="badge early">Pulang Awal</span>');
             durations.push(`${record.earlyMinutes}m pulang awal`);
         }
+        if (record.lateMinutes === 0 && record.earlyMinutes === 0) {
+            badges.push('<span class="badge ok">Tepat Waktu</span>');
+        }
+        
+        // Create unique identifier for record
+        const recordId = `${record.date}_${record.name}_${record.unit}_${record.jabatan}`;
         
         html += `
-            <div class="history-item">
+            <div class="history-item" data-record-id="${recordId}">
                 <span class="date">${formatDate(record.date)}</span>
                 <span class="employee-name">${record.name || '-'}</span>
                 ${badges.join('')}
-                <span class="duration">${durations.join(', ')}</span>
-                <span class="deduction">-Rp ${(record.deduction || 0).toLocaleString('id-ID')}</span>
+                <span class="duration">${durations.length > 0 ? durations.join(', ') : '-'}</span>
+                <span class="deduction">${record.deduction > 0 ? '-' : ''}Rp ${(record.deduction || 0).toLocaleString('id-ID')}</span>
+                <div class="actions">
+                    <button class="action-btn edit" onclick="openEditModal('${recordId}')" title="Edit">✏️</button>
+                    <button class="action-btn delete" onclick="openDeleteModal('${recordId}')" title="Hapus">🗑️</button>
+                </div>
             </div>
         `;
     });
@@ -403,3 +406,216 @@ function formatDate(dateStr) {
     const options = { day: 'numeric', month: 'short', year: 'numeric' };
     return date.toLocaleDateString('id-ID', options);
 }
+
+// ===== EDIT FUNCTIONS =====
+let currentEditRecord = null;
+
+async function openEditModal(recordId) {
+    const records = getRecords();
+    const record = records.find(r => `${r.date}_${r.name}_${r.unit}_${r.jabatan}` === recordId);
+    
+    if (!record) {
+        alert('Data tidak ditemukan');
+        return;
+    }
+    
+    currentEditRecord = record;
+    
+    // Populate edit form
+    document.getElementById('editDate').value = record.date;
+    document.getElementById('editName').value = record.name || '';
+    document.getElementById('editLateMinutes').value = record.lateMinutes || 0;
+    document.getElementById('editEarlyMinutes').value = record.earlyMinutes || 0;
+    
+    // Load units for edit form
+    const editUnitSelect = document.getElementById('editUnit');
+    const editJabatanSelect = document.getElementById('editJabatan');
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/units`);
+        const data = await response.json();
+        
+        if (data.success) {
+            editUnitSelect.innerHTML = '<option value="">-- Pilih Unit --</option>';
+            data.data.forEach(unit => {
+                const option = document.createElement('option');
+                option.value = unit;
+                option.textContent = unit;
+                if (unit === record.unit) option.selected = true;
+                editUnitSelect.appendChild(option);
+            });
+            
+            // Load positions for selected unit
+            if (record.unit) {
+                await loadEditPositions(record.unit, record.jabatan);
+            }
+        }
+    } catch (error) {
+        console.error('Error loading units:', error);
+    }
+    
+    // Setup unit change handler for edit
+    editUnitSelect.onchange = async () => {
+        await loadEditPositions(editUnitSelect.value);
+    };
+    
+    document.getElementById('editModal').classList.remove('hidden');
+}
+
+async function loadEditPositions(unit, selectedJabatan = '') {
+    const editJabatanSelect = document.getElementById('editJabatan');
+    editJabatanSelect.innerHTML = '<option value="">-- Pilih Jabatan --</option>';
+    
+    if (!unit) return;
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/positions?unit=${encodeURIComponent(unit)}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            data.data.forEach(position => {
+                const option = document.createElement('option');
+                option.value = position;
+                option.textContent = position;
+                if (position === selectedJabatan) option.selected = true;
+                editJabatanSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading positions:', error);
+    }
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').classList.add('hidden');
+    currentEditRecord = null;
+}
+
+// Handle edit form submission
+document.getElementById('editForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    if (!currentEditRecord) return;
+    
+    const newDate = document.getElementById('editDate').value;
+    const newName = document.getElementById('editName').value.trim();
+    const newUnit = document.getElementById('editUnit').value;
+    const newJabatan = document.getElementById('editJabatan').value;
+    const newLateMinutes = parseInt(document.getElementById('editLateMinutes').value) || 0;
+    const newEarlyMinutes = parseInt(document.getElementById('editEarlyMinutes').value) || 0;
+    
+    if (!newDate || !newName || !newUnit || !newJabatan) {
+        alert('Mohon lengkapi semua field');
+        return;
+    }
+    
+    // Calculate new deduction
+    let totalDeduction = 0;
+    
+    if (newLateMinutes > 5) {
+        try {
+            const response = await fetch(`${API_BASE}/api/calculate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ unit: newUnit, jabatan: newJabatan, type: 'terlambat', minutes: newLateMinutes })
+            });
+            const data = await response.json();
+            if (data.success) totalDeduction += Math.abs(data.data.deduction);
+        } catch (error) {
+            console.error('Error calculating late deduction:', error);
+        }
+    }
+    
+    if (newEarlyMinutes > 0) {
+        try {
+            const response = await fetch(`${API_BASE}/api/calculate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ unit: newUnit, jabatan: newJabatan, type: 'pulang_awal', minutes: newEarlyMinutes })
+            });
+            const data = await response.json();
+            if (data.success) totalDeduction += Math.abs(data.data.deduction);
+        } catch (error) {
+            console.error('Error calculating early deduction:', error);
+        }
+    }
+    
+    // Update record in localStorage
+    const records = getRecords();
+    const index = records.findIndex(r => 
+        r.date === currentEditRecord.date && 
+        r.name === currentEditRecord.name && 
+        r.unit === currentEditRecord.unit && 
+        r.jabatan === currentEditRecord.jabatan
+    );
+    
+    if (index >= 0) {
+        records[index] = {
+            date: newDate,
+            name: newName,
+            unit: newUnit,
+            jabatan: newJabatan,
+            arrival: formatTimeWithOffset(WORK_START, newLateMinutes),
+            departure: formatTimeWithOffset(WORK_END, -newEarlyMinutes),
+            lateMinutes: newLateMinutes > 5 ? newLateMinutes : 0,
+            earlyMinutes: newEarlyMinutes,
+            deduction: totalDeduction,
+            status: getStatusText(newLateMinutes, newEarlyMinutes)
+        };
+        
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+        alert('Data berhasil diperbarui!');
+        closeEditModal();
+        
+        // Refresh history
+        loadEmployeeSummary();
+    }
+});
+
+function getStatusText(lateMinutes, earlyMinutes) {
+    const details = [];
+    if (lateMinutes > 5) details.push(`Telat ${lateMinutes}m`);
+    if (earlyMinutes > 0) details.push(`Pulang Awal ${earlyMinutes}m`);
+    return details.length > 0 ? details.join(', ') : 'Tepat Waktu';
+}
+
+// ===== DELETE FUNCTIONS =====
+let deleteRecordId = null;
+
+function openDeleteModal(recordId) {
+    const records = getRecords();
+    const record = records.find(r => `${r.date}_${r.name}_${r.unit}_${r.jabatan}` === recordId);
+    
+    if (!record) {
+        alert('Data tidak ditemukan');
+        return;
+    }
+    
+    deleteRecordId = recordId;
+    document.getElementById('deleteInfo').textContent = 
+        `${record.name} - ${formatDate(record.date)} (${record.jabatan})`;
+    
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+    deleteRecordId = null;
+}
+
+document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+    if (!deleteRecordId) return;
+    
+    const records = getRecords();
+    const index = records.findIndex(r => `${r.date}_${r.name}_${r.unit}_${r.jabatan}` === deleteRecordId);
+    
+    if (index >= 0) {
+        records.splice(index, 1);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+        alert('Data berhasil dihapus!');
+        closeDeleteModal();
+        
+        // Refresh history
+        loadEmployeeSummary();
+    }
+});

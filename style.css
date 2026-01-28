@@ -444,13 +444,17 @@ header p {
     color: #fcd34d;
 }
 
+.history-item .badge.ok {
+    background: rgba(34, 197, 94, 0.2);
+    color: #86efac;
+}
+
 .history-item .duration {
     font-size: 0.85rem;
     color: var(--text-primary);
 }
 
 .history-item .deduction {
-    margin-left: auto;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.85rem;
     color: var(--danger);
@@ -508,6 +512,118 @@ td.deduction {
 }
 
 .hidden { display: none !important; }
+
+/* Modal */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal-content {
+    background: var(--bg-card);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    padding: 24px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-small {
+    max-width: 400px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-header h3 {
+    font-size: 1.2rem;
+    color: var(--text-primary);
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.close-btn:hover {
+    color: var(--danger);
+}
+
+.delete-message {
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.delete-info {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    padding: 10px;
+    background: var(--bg-input);
+    border-radius: var(--radius-sm);
+    margin-bottom: 16px;
+}
+
+/* Action Buttons in History */
+.history-item .actions {
+    display: flex;
+    gap: 6px;
+    margin-left: 8px;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.action-btn.edit {
+    color: var(--secondary);
+}
+
+.action-btn.edit:hover {
+    background: rgba(14, 165, 233, 0.2);
+}
+
+.action-btn.delete {
+    color: var(--danger);
+}
+
+.action-btn.delete:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+}
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }

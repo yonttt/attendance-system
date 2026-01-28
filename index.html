@@ -176,6 +176,69 @@
         </main>
     </div>
 
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ Edit Data Absensi</h3>
+                <button class="close-btn" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form id="editForm">
+                <input type="hidden" id="editIndex">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editDate">Tanggal</label>
+                        <input type="date" id="editDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editName">Nama Karyawan</label>
+                        <input type="text" id="editName" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editUnit">Unit</label>
+                        <select id="editUnit" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editJabatan">Jabatan</label>
+                        <select id="editJabatan" required></select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editLateMinutes">Menit Terlambat</label>
+                        <input type="number" id="editLateMinutes" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="editEarlyMinutes">Menit Pulang Awal</label>
+                        <input type="number" id="editEarlyMinutes" min="0" value="0">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-danger" onclick="closeEditModal()">Batal</button>
+                    <button type="submit" class="btn btn-primary">💾 Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal hidden">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h3>🗑️ Hapus Data</h3>
+                <button class="close-btn" onclick="closeDeleteModal()">&times;</button>
+            </div>
+            <p class="delete-message">Yakin ingin menghapus data absensi ini?</p>
+            <p id="deleteInfo" class="delete-info"></p>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Batal</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">🗑️ Hapus</button>
+            </div>
+        </div>
+    </div>
+
     <script src="/app.js"></script>
     <script>
         const container = document.getElementById('particles');
