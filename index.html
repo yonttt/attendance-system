@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Impact System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+    
+    <div class="container">
+        <header>
+            <h1>⚡ Attendance Impact System</h1>
+            <p>Salary Deduction Calculator</p>
+        </header>
+
+        <main class="main-grid">
+            <!-- Left: Calculator -->
+            <section class="card">
+                <h2>📊 Kalkulator</h2>
+                <form id="calculatorForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="unitSelect">Unit</label>
+                            <select id="unitSelect" required><option value="">-- Pilih Unit --</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="jabatanSelect">Jabatan</label>
+                            <select id="jabatanSelect" required disabled><option value="">-- Pilih Jabatan --</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="lateType">Jenis</label>
+                            <select id="lateType" required>
+                                <option value="">-- Pilih --</option>
+                                <option value="terlambat">🔴 Terlambat</option>
+                                <option value="pulang_awal">🟡 Pulang Awal</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="minutes">Menit</label>
+                            <input type="number" id="minutes" min="1" max="120" placeholder="0" required>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">💰 Hitung</button>
+                        <button type="button" class="btn btn-secondary" id="addIncidentBtn">➕ Batch</button>
+                    </div>
+                </form>
+
+                <div id="singleResult" class="result-box hidden">
+                    <div class="result-grid">
+                        <div class="result-item"><span class="label">Unit</span><span id="resultUnit" class="value"></span></div>
+                        <div class="result-item"><span class="label">Jabatan</span><span id="resultJabatan" class="value"></span></div>
+                        <div class="result-item"><span class="label">Jenis</span><span id="resultType" class="value"></span></div>
+                        <div class="result-item"><span class="label">Durasi</span><span id="resultMinutes" class="value"></span></div>
+                    </div>
+                    <div class="result-total">
+                        <span class="label">POTONGAN</span>
+                        <span id="resultDeduction" class="value"></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right: Table & Batch -->
+            <div class="right-column">
+                <section class="card table-card">
+                    <h2>📑 Tabel Potongan</h2>
+                    <p id="tableHint" class="hint">Pilih Unit & Jabatan</p>
+                    <div id="deductionTables" class="deduction-tables hidden">
+                        <div class="tables-wrapper">
+                            <div class="table-box">
+                                <h4>🔴 Terlambat</h4>
+                                <table id="lateTable"><thead><tr><th>Durasi</th><th>Rp</th></tr></thead><tbody></tbody></table>
+                            </div>
+                            <div class="table-box">
+                                <h4>🟡 Pulang Awal</h4>
+                                <table id="earlyTable"><thead><tr><th>Durasi</th><th>Rp</th></tr></thead><tbody></tbody></table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card batch-card">
+                    <h2>📋 Batch Mode</h2>
+                    <div id="incidentsList" class="incidents-list"><p class="empty-message">Kosong</p></div>
+                    <div id="batchControls" class="batch-controls hidden">
+                        <button type="button" class="btn btn-danger btn-sm" id="clearAllBtn">🗑️</button>
+                        <button type="button" class="btn btn-success btn-sm" id="calculateBatchBtn">🧮 Hitung</button>
+                    </div>
+                    <div id="batchResult" class="result-box hidden">
+                        <div id="batchDetails" class="batch-details"></div>
+                        <div class="result-total small">
+                            <span class="label">TOTAL</span>
+                            <span id="totalDeduction" class="value"></span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="/app.js"></script>
+    <script>
+        const container = document.getElementById('particles');
+        for (let i = 0; i < 15; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.left = Math.random() * 100 + '%';
+            p.style.animationDelay = Math.random() * 15 + 's';
+            p.style.animationDuration = (15 + Math.random() * 10) + 's';
+            container.appendChild(p);
+        }
+    </script>
+</body>
+</html>
