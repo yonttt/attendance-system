@@ -9,8 +9,8 @@ const unitSelect = document.getElementById('unitSelect');
 const jabatanSelect = document.getElementById('jabatanSelect');
 const attendanceDate = document.getElementById('attendanceDate');
 const employeeName = document.getElementById('employeeName');
-const arrivalTime = document.getElementById('arrivalTime');
-const departureTime = document.getElementById('departureTime');
+const lateMinutesInput = document.getElementById('lateMinutes');
+const earlyMinutesInput = document.getElementById('earlyMinutes');
 const timeStatus = document.getElementById('timeStatus');
 const attendanceForm = document.getElementById('attendanceForm');
 const singleResult = document.getElementById('singleResult');
@@ -37,8 +37,8 @@ function setupEventListeners() {
     jabatanSelect.addEventListener('change', handleJabatanChange);
     summaryUnit.addEventListener('change', () => handleUnitChange(summaryUnit, summaryJabatan));
     
-    arrivalTime.addEventListener('change', updateTimeStatus);
-    departureTime.addEventListener('change', updateTimeStatus);
+    lateMinutesInput.addEventListener('input', updateTimeStatus);
+    earlyMinutesInput.addEventListener('input', updateTimeStatus);
     
     attendanceForm.addEventListener('submit', handleSaveAttendance);
     loadSummaryBtn.addEventListener('click', loadEmployeeSummary);
@@ -144,28 +144,20 @@ async function handleJabatanChange() {
 
 // Update Time Status (real-time feedback)
 function updateTimeStatus() {
-    const arrival = arrivalTime.value;
-    const departure = departureTime.value;
-    
-    if (!arrival || !departure) {
-        timeStatus.classList.remove('show');
-        return;
-    }
-    
-    const lateMinutes = calculateLateness(arrival, WORK_START);
-    const earlyMinutes = calculateEarlyLeave(departure, WORK_END);
+    const lateMinutes = parseInt(lateMinutesInput.value) || 0;
+    const earlyMinutes = parseInt(earlyMinutesInput.value) || 0;
     
     let statusHtml = '';
     let statusClass = 'ok';
     
     if (lateMinutes > 5) { // More than 5 minutes late
         statusClass = 'late';
-        statusHtml += `🔴 Terlambat <strong>${lateMinutes} menit</strong><br>`;
+        statusHtml += `🔴 Terlambat <strong>${lateMinutes} menit</strong> (datang ${formatTimeWithOffset(WORK_START, lateMinutes)})<br>`;
     }
     
     if (earlyMinutes > 0) {
         statusClass = statusClass === 'late' ? 'late' : 'early';
-        statusHtml += `🟡 Pulang Awal <strong>${earlyMinutes} menit</strong>`;
+        statusHtml += `🟡 Pulang Awal <strong>${earlyMinutes} menit</strong> (pulang ${formatTimeWithOffset(WORK_END, -earlyMinutes)})`;
     }
     
     if (lateMinutes <= 5 && earlyMinutes <= 0) {
@@ -176,26 +168,13 @@ function updateTimeStatus() {
     timeStatus.className = `time-status show ${statusClass}`;
 }
 
-// Calculate lateness in minutes
-function calculateLateness(actual, expected) {
-    const [aH, aM] = actual.split(':').map(Number);
-    const [eH, eM] = expected.split(':').map(Number);
-    
-    const actualMinutes = aH * 60 + aM;
-    const expectedMinutes = eH * 60 + eM;
-    
-    return Math.max(0, actualMinutes - expectedMinutes);
-}
-
-// Calculate early leave in minutes
-function calculateEarlyLeave(actual, expected) {
-    const [aH, aM] = actual.split(':').map(Number);
-    const [eH, eM] = expected.split(':').map(Number);
-    
-    const actualMinutes = aH * 60 + aM;
-    const expectedMinutes = eH * 60 + eM;
-    
-    return Math.max(0, expectedMinutes - actualMinutes);
+// Format time with offset
+function formatTimeWithOffset(baseTime, offsetMinutes) {
+    const [h, m] = baseTime.split(':').map(Number);
+    const totalMinutes = h * 60 + m + offsetMinutes;
+    const newH = Math.floor(totalMinutes / 60);
+    const newM = totalMinutes % 60;
+    return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
 }
 
 // Save Attendance
@@ -206,16 +185,17 @@ async function handleSaveAttendance(e) {
     const jabatan = jabatanSelect.value;
     const date = attendanceDate.value;
     const name = employeeName.value.trim();
-    const arrival = arrivalTime.value;
-    const departure = departureTime.value;
+    const lateMinutes = parseInt(lateMinutesInput.value) || 0;
+    const earlyMinutes = parseInt(earlyMinutesInput.value) || 0;
     
     if (!unit || !jabatan || !date || !name) {
         alert('Mohon lengkapi semua field');
         return;
     }
     
-    const lateMinutes = calculateLateness(arrival, WORK_START);
-    const earlyMinutes = calculateEarlyLeave(departure, WORK_END);
+    // Calculate actual arrival/departure times for display
+    const arrival = formatTimeWithOffset(WORK_START, lateMinutes);
+    const departure = formatTimeWithOffset(WORK_END, -earlyMinutes);
     
     let totalDeduction = 0;
     let status = 'Tepat Waktu';
