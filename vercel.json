@@ -12,6 +12,7 @@
     { "src": "/api/positions", "dest": "/api/positions.py" },
     { "src": "/api/calculate", "dest": "/api/calculate.py" },
     { "src": "/api/deduction-table", "dest": "/api/deduction-table.py" },
+    { "src": "/api/attendance", "dest": "/api/attendance.py" },
     { "src": "/", "dest": "/index.html" }
   ]
 }
