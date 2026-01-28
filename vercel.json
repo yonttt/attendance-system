@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/*.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "public/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    { "src": "/api/employees", "dest": "/api/employees.py" },
+    { "src": "/api/units", "dest": "/api/units.py" },
+    { "src": "/api/positions", "dest": "/api/positions.py" },
+    { "src": "/api/calculate", "dest": "/api/calculate.py" },
+    { "src": "/api/deduction-table", "dest": "/api/deduction-table.py" },
+    { "src": "/(.*\\.(html|css|js|ico|png|jpg|svg))$", "dest": "/public/$1" },
+    { "src": "/", "dest": "/public/index.html" }
+  ]
+}
