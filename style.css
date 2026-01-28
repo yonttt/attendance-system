@@ -388,6 +388,17 @@ header p {
     min-width: 90px;
 }
 
+.history-item .employee-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 100px;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .history-item .badge {
     padding: 3px 8px;
     border-radius: 20px;

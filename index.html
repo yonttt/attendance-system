@@ -18,7 +18,7 @@
             <p>Sistem Absensi & Potongan Gaji Real-Time</p>
             <div class="work-hours">
                 <span>🕘 Jam Masuk: <strong>09:00</strong></span>
-                <span>🕕 Jam Pulang: <strong>18:00</strong></span>
+                <span>� Jam Pulang: <strong>19:00</strong></span>
             </div>
         </header>
 
@@ -27,9 +27,15 @@
             <section class="card">
                 <h2>📝 Input Absensi Harian</h2>
                 <form id="attendanceForm">
-                    <div class="form-group">
-                        <label for="attendanceDate">Tanggal</label>
-                        <input type="date" id="attendanceDate" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="attendanceDate">Tanggal</label>
+                            <input type="date" id="attendanceDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="employeeName">Nama Karyawan</label>
+                            <input type="text" id="employeeName" placeholder="Masukkan nama" required>
+                        </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
@@ -48,7 +54,7 @@
                         </div>
                         <div class="form-group">
                             <label for="departureTime">Jam Pulang</label>
-                            <input type="time" id="departureTime" value="18:00">
+                            <input type="time" id="departureTime" value="19:00">
                         </div>
                     </div>
                     
@@ -63,6 +69,10 @@
                 <div id="singleResult" class="result-box hidden">
                     <h3>📋 Hasil Absensi</h3>
                     <div class="result-grid">
+                        <div class="result-item">
+                            <span class="label">Nama</span>
+                            <span class="value" id="resultName">-</span>
+                        </div>
                         <div class="result-item">
                             <span class="label">Tanggal</span>
                             <span class="value" id="resultDate">-</span>

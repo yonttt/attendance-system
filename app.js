@@ -1,13 +1,14 @@
 // Constants
 const API_BASE = '';
 const WORK_START = '09:00';
-const WORK_END = '18:00';
+const WORK_END = '19:00';
 const STORAGE_KEY = 'attendance_records';
 
 // DOM Elements
 const unitSelect = document.getElementById('unitSelect');
 const jabatanSelect = document.getElementById('jabatanSelect');
 const attendanceDate = document.getElementById('attendanceDate');
+const employeeName = document.getElementById('employeeName');
 const arrivalTime = document.getElementById('arrivalTime');
 const departureTime = document.getElementById('departureTime');
 const timeStatus = document.getElementById('timeStatus');
@@ -204,10 +205,11 @@ async function handleSaveAttendance(e) {
     const unit = unitSelect.value;
     const jabatan = jabatanSelect.value;
     const date = attendanceDate.value;
+    const name = employeeName.value.trim();
     const arrival = arrivalTime.value;
     const departure = departureTime.value;
     
-    if (!unit || !jabatan || !date) {
+    if (!unit || !jabatan || !date || !name) {
         alert('Mohon lengkapi semua field');
         return;
     }
@@ -262,6 +264,7 @@ async function handleSaveAttendance(e) {
     // Save to localStorage
     const record = {
         date,
+        name,
         unit,
         jabatan,
         arrival,
@@ -275,6 +278,7 @@ async function handleSaveAttendance(e) {
     saveRecord(record);
     
     // Display result
+    document.getElementById('resultName').textContent = name;
     document.getElementById('resultDate').textContent = formatDate(date);
     document.getElementById('resultStatus').textContent = status;
     document.getElementById('resultDuration').textContent = `Datang: ${arrival}, Pulang: ${departure}`;
@@ -283,16 +287,16 @@ async function handleSaveAttendance(e) {
     singleResult.classList.remove('hidden');
     
     // Show success message
-    alert(`Absensi tersimpan!\n${status}\nPotongan: Rp ${totalDeduction.toLocaleString('id-ID')}`);
+    alert(`Absensi ${name} tersimpan!\n${status}\nPotongan: Rp ${totalDeduction.toLocaleString('id-ID')}`);
 }
 
 // Save record to localStorage
 function saveRecord(record) {
     const records = getRecords();
     
-    // Check if record exists for same date, unit, jabatan - update it
+    // Check if record exists for same date, name, unit, jabatan - update it
     const existingIndex = records.findIndex(r => 
-        r.date === record.date && r.unit === record.unit && r.jabatan === record.jabatan
+        r.date === record.date && r.name === record.name && r.unit === record.unit && r.jabatan === record.jabatan
     );
     
     if (existingIndex >= 0) {
@@ -395,6 +399,7 @@ function displayHistory(records) {
         html += `
             <div class="history-item">
                 <span class="date">${formatDate(record.date)}</span>
+                <span class="employee-name">${record.name || '-'}</span>
                 ${badges.join('')}
                 <span class="duration">${durations.join(', ')}</span>
                 <span class="deduction">-Rp ${(record.deduction || 0).toLocaleString('id-ID')}</span>
