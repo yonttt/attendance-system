@@ -361,22 +361,33 @@ function displayHistory(records) {
         return;
     }
     
+    // Table header
+    let html = `
+        <div class="history-header">
+            <span>Tanggal</span>
+            <span>Nama</span>
+            <span>Status</span>
+            <span>Durasi</span>
+            <span>Potongan</span>
+            <span>Aksi</span>
+        </div>
+    `;
+    
     // Show all records (not just issues) so user can edit/delete any
-    let html = '';
     records.forEach(record => {
         const badges = [];
         const durations = [];
         
         if (record.lateMinutes > 0) {
             badges.push('<span class="badge late">Telat</span>');
-            durations.push(`${record.lateMinutes}m telat`);
+            durations.push(`${record.lateMinutes}m`);
         }
         if (record.earlyMinutes > 0) {
-            badges.push('<span class="badge early">Pulang Awal</span>');
-            durations.push(`${record.earlyMinutes}m pulang awal`);
+            badges.push('<span class="badge early">P. Awal</span>');
+            durations.push(`${record.earlyMinutes}m`);
         }
         if (record.lateMinutes === 0 && record.earlyMinutes === 0) {
-            badges.push('<span class="badge ok">Tepat Waktu</span>');
+            badges.push('<span class="badge ok">OK</span>');
         }
         
         // Create unique identifier for record
@@ -384,11 +395,11 @@ function displayHistory(records) {
         
         html += `
             <div class="history-item" data-record-id="${recordId}">
-                <span class="date">${formatDate(record.date)}</span>
-                <span class="employee-name">${record.name || '-'}</span>
-                ${badges.join('')}
+                <span class="date">${formatDateShort(record.date)}</span>
+                <span class="employee-name" title="${record.name || '-'}">${record.name || '-'}</span>
+                <div class="badges">${badges.join('')}</div>
                 <span class="duration">${durations.length > 0 ? durations.join(', ') : '-'}</span>
-                <span class="deduction">${record.deduction > 0 ? '-' : ''}Rp ${(record.deduction || 0).toLocaleString('id-ID')}</span>
+                <span class="deduction">Rp ${(record.deduction || 0).toLocaleString('id-ID')}</span>
                 <div class="actions">
                     <button class="action-btn edit" onclick="openEditModal('${recordId}')" title="Edit">✏️</button>
                     <button class="action-btn delete" onclick="openDeleteModal('${recordId}')" title="Hapus">🗑️</button>
@@ -405,6 +416,16 @@ function formatDate(dateStr) {
     const date = new Date(dateStr);
     const options = { day: 'numeric', month: 'short', year: 'numeric' };
     return date.toLocaleDateString('id-ID', options);
+}
+
+// Format date short (for table)
+function formatDateShort(dateStr) {
+    const date = new Date(dateStr);
+    const day = date.getDate();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    return `${day} ${month} ${year}`;
 }
 
 // ===== EDIT FUNCTIONS =====

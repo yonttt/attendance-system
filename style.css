@@ -393,43 +393,66 @@ header p {
 
 /* History List */
 .history-list {
-    max-height: 250px;
+    max-height: 300px;
     overflow-y: auto;
 }
 
+/* Table-like header */
+.history-header {
+    display: grid;
+    grid-template-columns: 90px 100px 140px 100px 90px 60px;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
 .history-item {
-    display: flex;
+    display: grid;
+    grid-template-columns: 90px 100px 140px 100px 90px 60px;
+    gap: 8px;
     align-items: center;
-    gap: 12px;
     padding: 10px;
     background: var(--bg-input);
     border-radius: var(--radius-sm);
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     border: 1px solid var(--border);
 }
 
 .history-item .date {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--text-secondary);
-    min-width: 90px;
 }
 
 .history-item .employee-name {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: var(--text-primary);
-    min-width: 100px;
-    max-width: 120px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
+.history-item .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
 .history-item .badge {
-    padding: 3px 8px;
-    border-radius: 20px;
-    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
     font-weight: 600;
     text-transform: uppercase;
 }
@@ -450,15 +473,22 @@ header p {
 }
 
 .history-item .duration {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--text-primary);
 }
 
 .history-item .deduction {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--danger);
     font-weight: 600;
+    text-align: right;
+}
+
+.history-item .actions {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
 }
 
 .empty-message {
