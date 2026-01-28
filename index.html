@@ -101,12 +101,15 @@
                     <div class="employee-selector">
                         <select id="summaryUnit"><option value="">-- Pilih Unit --</option></select>
                         <select id="summaryJabatan" disabled><option value="">-- Pilih Jabatan --</option></select>
-                        <button class="btn btn-secondary" id="loadSummaryBtn">🔍 Lihat</button>
+                    </div>
+                    <div class="employee-selector" style="margin-top: 8px;">
+                        <input type="text" id="summaryName" placeholder="Nama karyawan (opsional)">
+                        <button class="btn btn-secondary" id="loadSummaryBtn">🔍 Lihat Riwayat</button>
                     </div>
                     
                     <div id="employeeSummary" class="hidden">
                         <div class="summary-header">
-                            <h3 id="summaryName">-</h3>
+                            <h3 id="summaryTitle">-</h3>
                             <span class="period" id="summaryPeriod">-</span>
                         </div>
                         <div class="summary-stats">

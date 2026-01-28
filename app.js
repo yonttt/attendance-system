@@ -17,6 +17,7 @@ const singleResult = document.getElementById('singleResult');
 
 const summaryUnit = document.getElementById('summaryUnit');
 const summaryJabatan = document.getElementById('summaryJabatan');
+const summaryNameInput = document.getElementById('summaryName');
 const loadSummaryBtn = document.getElementById('loadSummaryBtn');
 const employeeSummary = document.getElementById('employeeSummary');
 const attendanceHistory = document.getElementById('attendanceHistory');
@@ -295,23 +296,28 @@ function getRecords() {
 }
 
 // Get records for specific employee
-function getEmployeeRecords(unit, jabatan) {
+function getEmployeeRecords(unit, jabatan, name = '') {
     const records = getRecords();
-    return records.filter(r => r.unit === unit && r.jabatan === jabatan)
-                  .sort((a, b) => new Date(b.date) - new Date(a.date));
+    return records.filter(r => {
+        const unitMatch = r.unit === unit;
+        const jabatanMatch = r.jabatan === jabatan;
+        const nameMatch = name ? (r.name || '').toLowerCase().includes(name.toLowerCase()) : true;
+        return unitMatch && jabatanMatch && nameMatch;
+    }).sort((a, b) => new Date(b.date) - new Date(a.date));
 }
 
 // Load Employee Summary
 function loadEmployeeSummary() {
     const unit = summaryUnit.value;
     const jabatan = summaryJabatan.value;
+    const name = summaryNameInput.value.trim();
     
     if (!unit || !jabatan) {
         alert('Pilih Unit dan Jabatan terlebih dahulu');
         return;
     }
     
-    const records = getEmployeeRecords(unit, jabatan);
+    const records = getEmployeeRecords(unit, jabatan, name);
     
     // Calculate summary
     let totalLateDays = 0;
@@ -325,7 +331,8 @@ function loadEmployeeSummary() {
     });
     
     // Display summary
-    document.getElementById('summaryName').textContent = `${unit} - ${jabatan}`;
+    const titleText = name ? `${name} (${jabatan})` : `${unit} - ${jabatan}`;
+    document.getElementById('summaryTitle').textContent = titleText;
     
     if (records.length > 0) {
         const dates = records.map(r => new Date(r.date));
